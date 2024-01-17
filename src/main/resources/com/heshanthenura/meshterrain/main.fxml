@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.MeshView?>
+
+<AnchorPane fx:id="background" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: black;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.heshanthenura.meshterrain.MainController">
+   <children>
+      <VBox fx:id="vbox" alignment="CENTER" prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <MeshView fx:id="meshView" />
+         </children>
+      </VBox>
+      <AnchorPane AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0">
+         <children>
+            <VBox alignment="CENTER">
+               <children>
+                  <Button fx:id="viewChangeBtn" mnemonicParsing="false" text="FILL" />
+                  <Slider fx:id="lengthSlider" showTickLabels="true" showTickMarks="true" />
+                  <Slider fx:id="colSlider" layoutX="10.0" layoutY="35.0" showTickLabels="true" showTickMarks="true" />
+                  <Slider fx:id="rowSlider" layoutX="10.0" layoutY="73.0" showTickLabels="true" showTickMarks="true" />
+               </children>
+            </VBox>
+         </children>
+      </AnchorPane>
+   </children>
+</AnchorPane>
