@@ -6,7 +6,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableFloatArray;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Point3D;
 import javafx.scene.Camera;
+import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -24,6 +26,7 @@ import javafx.stage.Stage;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,10 +46,10 @@ public class MainController implements Initializable {
     private Slider colSlider;
     @FXML
     private Slider rowSlider;
-
     @FXML
     private VBox vbox;
-
+    @FXML
+    private AnchorPane controlsPane;
 
     TriangleMesh mesh = new TriangleMesh();
     Stage stage;
@@ -60,6 +63,12 @@ public class MainController implements Initializable {
     PreviousEvenFacePoint previousEvenFacePoint = new PreviousEvenFacePoint(0, 0, 0);
     PreviousOddFacePoint previousOddFacePoint = new PreviousOddFacePoint(0, 0, 0);
 
+    double mouseX = 0;
+    double mouseY = 0;
+
+    double meshRotate;
+    double zoomFactor = 1.0;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         Platform.runLater(() -> {
@@ -68,16 +77,41 @@ public class MainController implements Initializable {
             stage = (Stage) background.getScene().getWindow();
 
             backgroundListeners();
-            setMesh();
+            new Thread(() -> {
+                Platform.runLater(() -> {
+                    setMesh();
+                });
+            }).start();
+            cameraMovements();
+
         });
     }
 
+    public void cameraMovements() {
+        background.setOnMousePressed(e -> {
+            mouseX = e.getX();
+            mouseY = e.getY();
+        });
+
+        background.setOnMouseDragged(e -> {
+            double deltaX = (e.getX() - mouseX) / 1;
+            double deltaY = (e.getY() - mouseY) / 1;
+
+            meshRotate += deltaY;
+
+            meshView.setRotationAxis(Rotate.X_AXIS);
+            meshView.setRotate(meshRotate);
+
+            mouseX = e.getX();
+            mouseY = e.getY();
+        });
+    }
 
     public void backgroundListeners() {
 
         lengthSlider.setValue(length);
         colSlider.setValue(columns);
-
+        rowSlider.setValue(rows);
         background.requestFocus();
         background.setOnKeyPressed(e -> {
             System.out.println("Pressed");
@@ -95,17 +129,40 @@ public class MainController implements Initializable {
             }
         });
         lengthSlider.valueProperty().addListener((e) -> {
-            length = (int) lengthSlider.getValue();
-            setMesh();
-
+            new Thread(() -> {
+                Platform.runLater(() -> {
+                    length = (int) lengthSlider.getValue();
+                    setMesh();
+                });
+            }).start();
         });
         colSlider.valueProperty().addListener((e) -> {
-            columns = (int) colSlider.getValue();
-            setMesh();
+
+            new Thread(() -> {
+                Platform.runLater(() -> {
+                    columns = (int) colSlider.getValue();
+                    setMesh();
+                });
+            }).start();
         });
         rowSlider.valueProperty().addListener((e) -> {
-            rows = (int) rowSlider.getValue();
-            setMesh();
+            new Thread(() -> {
+                rows = (int) rowSlider.getValue();
+                Platform.runLater(() -> {
+                    setMesh();
+                });
+            }).start();
+        });
+        background.setOnScroll(e -> {
+            double delta = e.getDeltaY();
+            double scaleFactor = (delta > 0) ? 1.1 : 0.9;  // Adjust the scale factor as needed
+
+            zoomFactor *= scaleFactor;
+
+            // Apply the scaling to the MeshView
+            meshView.setScaleX(meshView.getScaleX() * scaleFactor);
+            meshView.setScaleY(meshView.getScaleY() * scaleFactor);
+            meshView.setScaleZ(meshView.getScaleZ() * scaleFactor);
         });
     }
 
@@ -130,22 +187,30 @@ public class MainController implements Initializable {
         addFaces();
 
         // Set layout properties to center meshView
+        // Set layout properties to center meshView
         AnchorPane.setTopAnchor(meshView, (background.getHeight() - meshView.getBoundsInLocal().getHeight()) / 2);
         AnchorPane.setLeftAnchor(meshView, (background.getWidth() - meshView.getBoundsInLocal().getWidth()) / 2);
 
         // Add the updated meshView to the background
         background.getChildren().add(meshView);
         meshView.toBack();
+        controlsPane.toFront();
+
+        // Apply the accumulated rotation
+        meshView.setRotationAxis(Rotate.X_AXIS);
+        meshView.setRotate(meshRotate);
+
+
     }
-
-
 
     void addPoints() {
         faces = columns * rows * 2;
+        Random random = new Random();
         for (int r = 0; r < rows + 1; r++) {
             for (int c = 0; c < columns + 1; c++) {
-                Point p = new Point(c * length, r * length, 0);
-                mesh.getPoints().addAll(c * length, r * length, 0);
+                int randomValue = random.nextInt(51); // Generates a random integer between 0 and 50
+                Point p = new Point(c * length, r * length, randomValue);
+                mesh.getPoints().addAll(c * length, r * length, randomValue);
             }
         }
     }

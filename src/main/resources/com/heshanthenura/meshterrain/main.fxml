@@ -13,7 +13,7 @@
             <MeshView fx:id="meshView" />
          </children>
       </VBox>
-      <AnchorPane AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0">
+      <AnchorPane fx:id="controlsPane" style="-fx-background-color: white;" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0">
          <children>
             <VBox alignment="CENTER">
                <children>
