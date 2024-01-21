@@ -47,6 +47,10 @@ public class MainController implements Initializable {
     @FXML
     private Slider rowSlider;
     @FXML
+    private Slider heightSlider;
+    @FXML
+    private Slider radiusSlider;
+    @FXML
     private VBox vbox;
     @FXML
     private AnchorPane controlsPane;
@@ -68,6 +72,8 @@ public class MainController implements Initializable {
 
     double meshRotate;
     double zoomFactor = 1.0;
+    double mountainHeight = 600;
+    double mountainRadius = 80;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -112,6 +118,8 @@ public class MainController implements Initializable {
         lengthSlider.setValue(length);
         colSlider.setValue(columns);
         rowSlider.setValue(rows);
+        heightSlider.setValue(mountainHeight);
+        radiusSlider.setValue(mountainRadius);
         background.requestFocus();
         background.setOnKeyPressed(e -> {
             System.out.println("Pressed");
@@ -164,6 +172,22 @@ public class MainController implements Initializable {
             meshView.setScaleY(meshView.getScaleY() * scaleFactor);
             meshView.setScaleZ(meshView.getScaleZ() * scaleFactor);
         });
+        heightSlider.valueProperty().addListener((e) -> {
+            new Thread(() -> {
+                mountainHeight = (int) heightSlider.getValue();
+                Platform.runLater(() -> {
+                    setMesh();
+                });
+            }).start();
+        });
+        radiusSlider.valueProperty().addListener((e) -> {
+            new Thread(() -> {
+                mountainRadius = (int) radiusSlider.getValue();
+                Platform.runLater(() -> {
+                    setMesh();
+                });
+            }).start();
+        });
     }
 
     public void setMesh() {
@@ -180,23 +204,22 @@ public class MainController implements Initializable {
         meshView.setMesh(mesh);
         meshView.toBack();
 
-        // Clear the existing lines
+
         background.getChildren().remove(meshView);
 
         addPoints();
         addFaces();
 
-        // Set layout properties to center meshView
-        // Set layout properties to center meshView
+
         AnchorPane.setTopAnchor(meshView, (background.getHeight() - meshView.getBoundsInLocal().getHeight()) / 2);
         AnchorPane.setLeftAnchor(meshView, (background.getWidth() - meshView.getBoundsInLocal().getWidth()) / 2);
 
-        // Add the updated meshView to the background
+
         background.getChildren().add(meshView);
         meshView.toBack();
         controlsPane.toFront();
 
-        // Apply the accumulated rotation
+
         meshView.setRotationAxis(Rotate.X_AXIS);
         meshView.setRotate(meshRotate);
 
@@ -205,15 +228,21 @@ public class MainController implements Initializable {
 
     void addPoints() {
         faces = columns * rows * 2;
-        Random random = new Random();
+
+        double centerX = (columns * length) / 2;
+        double centerY = (rows * length) / 2;
+
+
+
         for (int r = 0; r < rows + 1; r++) {
             for (int c = 0; c < columns + 1; c++) {
-                int randomValue = random.nextInt(51); // Generates a random integer between 0 and 50
-                Point p = new Point(c * length, r * length, randomValue);
-                mesh.getPoints().addAll(c * length, r * length, randomValue);
+                calculateZ(centerX,centerY,c*length,r*length);
+                Point p = new Point(c * length, r * length, calculateZ(centerX,centerY,c*length,r*length));
+                mesh.getPoints().addAll(p.getX(), p.getY(), p.getZ());
             }
         }
     }
+
 
     void addFaces() {
         for (int f = 0; f < faces; f++) {
@@ -231,14 +260,14 @@ public class MainController implements Initializable {
                     previousEvenFacePoint.setF(f);
                     previousEvenFacePoint.setS(f + columns + 1);
                     previousEvenFacePoint.setT(f + columns + 2);
-                    facesArray.add(new Face(f, f, 0, (f + columns + 1), 0, (f + columns + 2), 0));
+//                    facesArray.add(new Face(f, f, 0, (f + columns + 1), 0, (f + columns + 2), 0));
                     mesh.getFaces().addAll(f, 0, (f + columns + 1), 0, (f + columns + 2), 0);
                 } else {
                     previousEvenFacePoint.setF(previousEvenFacePoint.getF() + 1);
                     previousEvenFacePoint.setS(previousEvenFacePoint.getS() + 1);
                     previousEvenFacePoint.setT(previousEvenFacePoint.getT() + 1);
                     logger.info("Face: " + f + "- " + previousEvenFacePoint.getF() + "," + previousEvenFacePoint.getS() + "," + previousEvenFacePoint.getT());
-                    facesArray.add(new Face(f, previousEvenFacePoint.getF(), 0, previousEvenFacePoint.getS(), 0, previousEvenFacePoint.getT(), 0));
+//                    facesArray.add(new Face(f, previousEvenFacePoint.getF(), 0, previousEvenFacePoint.getS(), 0, previousEvenFacePoint.getT(), 0));
                     mesh.getFaces().addAll(previousEvenFacePoint.getF(), 0, previousEvenFacePoint.getS(), 0, previousEvenFacePoint.getT(), 0);
 
                 }
@@ -248,7 +277,7 @@ public class MainController implements Initializable {
                     previousOddFacePoint.setS(previousOddFacePoint.getS() + 1);
                     previousOddFacePoint.setT(previousOddFacePoint.getT() + 1);
                     logger.info("Face: " + f + "- " + previousOddFacePoint.getF() + "," + previousOddFacePoint.getS() + "," + previousOddFacePoint.getT());
-                    facesArray.add(new Face(f, previousOddFacePoint.getF(), 0, previousOddFacePoint.getS(), 0, previousOddFacePoint.getT(), 0));
+//                    facesArray.add(new Face(f, previousOddFacePoint.getF(), 0, previousOddFacePoint.getS(), 0, previousOddFacePoint.getT(), 0));
                     mesh.getFaces().addAll(previousOddFacePoint.getF(), 0, previousOddFacePoint.getS(), 0, previousOddFacePoint.getT(), 0);
 
                 } else if (f == 1) {
@@ -256,7 +285,7 @@ public class MainController implements Initializable {
                     previousOddFacePoint.setS(2 + columns);
                     previousOddFacePoint.setT(1);
                     logger.info("Face: " + f + "- " + previousOddFacePoint.getF() + "," + previousOddFacePoint.getS() + "," + previousOddFacePoint.getT());
-                    facesArray.add(new Face(f, previousOddFacePoint.getF(), 0, previousOddFacePoint.getS(), 0, previousOddFacePoint.getT(), 0));
+//                    facesArray.add(new Face(f, previousOddFacePoint.getF(), 0, previousOddFacePoint.getS(), 0, previousOddFacePoint.getT(), 0));
                     mesh.getFaces().addAll(previousOddFacePoint.getF(), 0, previousOddFacePoint.getS(), 0, previousOddFacePoint.getT(), 0);
 
                 } else {
@@ -264,7 +293,7 @@ public class MainController implements Initializable {
                     previousOddFacePoint.setS(previousOddFacePoint.getS() + 1);
                     previousOddFacePoint.setT(previousOddFacePoint.getT() + 1);
                     logger.info("Face: " + f + "- " + previousOddFacePoint.getF() + "," + previousOddFacePoint.getS() + "," + previousOddFacePoint.getT());
-                    facesArray.add(new Face(f, previousOddFacePoint.getF(), 0, previousOddFacePoint.getS(), 0, previousOddFacePoint.getT(), 0));
+//                    facesArray.add(new Face(f, previousOddFacePoint.getF(), 0, previousOddFacePoint.getS(), 0, previousOddFacePoint.getT(), 0));
                     mesh.getFaces().addAll(previousOddFacePoint.getF(), 0, previousOddFacePoint.getS(), 0, previousOddFacePoint.getT(), 0);
 
                 }
@@ -272,6 +301,18 @@ public class MainController implements Initializable {
         }
 
     }
+
+    float calculateZ(double centerX, double centerY, double x, double y) {
+        double radius = Math.sqrt(Math.pow(centerX - x, 2) + Math.pow(centerY - y, 2));
+        double z;
+        if (radius > mountainRadius) {
+            z = 0;
+        } else {
+            z = (mountainHeight * (1 - (Math.pow(radius, 2) / Math.pow(mountainRadius, 2))));
+        }
+        return (float) -z;
+    }
+
 
 }
 
@@ -313,11 +354,7 @@ class Point {
 
     @Override
     public String toString() {
-        return "Point{" +
-                "x=" + x +
-                ", y=" + y +
-                ", z=" + z +
-                '}';
+        return "Point{" + "x=" + x + ", y=" + y + ", z=" + z + '}';
     }
 }
 
@@ -415,15 +452,7 @@ class Face {
 
     @Override
     public String toString() {
-        return "Face{" +
-                "faceNumber=" + faceNumber +
-                ", x=" + x +
-                ", xt=" + xt +
-                ", y=" + y +
-                ", yt=" + yt +
-                ", z=" + z +
-                ", zt=" + zt +
-                '}';
+        return "Face{" + "faceNumber=" + faceNumber + ", x=" + x + ", xt=" + xt + ", y=" + y + ", yt=" + yt + ", z=" + z + ", zt=" + zt + '}';
     }
 }
 
@@ -464,11 +493,7 @@ class PreviousEvenFacePoint {
 
     @Override
     public String toString() {
-        return "PreviousEvenFacePoint{" +
-                "f=" + f +
-                ", s=" + s +
-                ", t=" + t +
-                '}';
+        return "PreviousEvenFacePoint{" + "f=" + f + ", s=" + s + ", t=" + t + '}';
     }
 }
 
@@ -509,10 +534,6 @@ class PreviousOddFacePoint {
 
     @Override
     public String toString() {
-        return "PreviousOddFacePoint{" +
-                "f=" + f +
-                ", s=" + s +
-                ", t=" + t +
-                '}';
+        return "PreviousOddFacePoint{" + "f=" + f + ", s=" + s + ", t=" + t + '}';
     }
 }
